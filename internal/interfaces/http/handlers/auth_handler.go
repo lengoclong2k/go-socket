@@ -18,6 +18,29 @@ func NewAuthHandler(authUseCase *usecases.AuthUseCase) *AuthHandler {
 	}
 }
 
+// @Summary Get Access Token from Refresh Token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body dto.RefreshTokenRequest tru "Refresh token request data"
+// @Success 200 {object} map[string]interface{} "Refresh token successful"
+// @Router /auth/refresh [post]
+func (h *AuthHandler) RefreshToken(c *gin.Context) {
+	var req dto.RefreshTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	response, err := h.authUseCase.RefreshToken(req)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+
+}
+
 // @Summary Create a new user
 // @Description Register a new user with the provided details
 // @Tags auth

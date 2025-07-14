@@ -44,7 +44,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/go-chat-app_internal_interfaces_dto.LoginRequest"
+                            "$ref": "#/definitions/dto.LoginRequest"
                         }
                     }
                 ],
@@ -73,6 +73,39 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/refresh": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Get Access Token from Refresh Token",
+                "parameters": [
+                    {
+                        "description": "Refresh token request data",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RefreshTokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Refresh token successful",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/auth/register": {
             "post": {
                 "description": "Register a new user with the provided details",
@@ -93,7 +126,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/go-chat-app_internal_interfaces_dto.RegisterRequest"
+                            "$ref": "#/definitions/dto.RegisterRequest"
                         }
                     }
                 ],
@@ -117,7 +150,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "go-chat-app_internal_interfaces_dto.LoginRequest": {
+        "dto.LoginRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -133,7 +166,18 @@ const docTemplate = `{
                 }
             }
         },
-        "go-chat-app_internal_interfaces_dto.RegisterRequest": {
+        "dto.RefreshTokenRequest": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RegisterRequest": {
             "type": "object",
             "required": [
                 "email",

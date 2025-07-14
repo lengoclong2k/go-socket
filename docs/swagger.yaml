@@ -1,6 +1,6 @@
 basePath: /v1
 definitions:
-  go-chat-app_internal_interfaces_dto.LoginRequest:
+  dto.LoginRequest:
     properties:
       email:
         type: string
@@ -11,7 +11,14 @@ definitions:
     - email
     - password
     type: object
-  go-chat-app_internal_interfaces_dto.RegisterRequest:
+  dto.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  dto.RegisterRequest:
     properties:
       email:
         type: string
@@ -51,7 +58,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/go-chat-app_internal_interfaces_dto.LoginRequest'
+          $ref: '#/definitions/dto.LoginRequest'
       produces:
       - application/json
       responses:
@@ -73,6 +80,27 @@ paths:
       summary: Authenticate a user
       tags:
       - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Refresh token request data
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/dto.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Refresh token successful
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get Access Token from Refresh Token
+      tags:
+      - auth
   /auth/register:
     post:
       consumes:
@@ -84,7 +112,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/go-chat-app_internal_interfaces_dto.RegisterRequest'
+          $ref: '#/definitions/dto.RegisterRequest'
       produces:
       - application/json
       responses:

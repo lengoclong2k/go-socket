@@ -17,8 +17,9 @@ type AuthUseCase struct {
 }
 
 type AuthResponse struct {
-	Token string        `json:"token"`
-	User  entities.User `json:"user"`
+	AccessToken  string        `json:"access_token"`
+	RefreshToken string        `json:"refresh_token"`
+	User         entities.User `json:"user"`
 }
 
 func NewAuthUseCase(userRepo repositories.UserRepository, jwtSecret string) *AuthUseCase {
@@ -62,14 +63,19 @@ func (uc *AuthUseCase) Register(req dto.RegisterRequest) (*AuthResponse, error) 
 	}
 
 	//Generate token
-	token, err := uc.generateToken(user.ID)
+	accessToken, err := uc.generateAccessToken(user.ID)
+	if err != nil {
+		return nil, err
+	}
+	refreshToken, err := uc.generateRefreshToken(user.ID)
 	if err != nil {
 		return nil, err
 	}
 
 	return &AuthResponse{
-		Token: token,
-		User:  *user,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		User:         *user,
 	}, nil
 }
 
@@ -90,22 +96,98 @@ func (uc *AuthUseCase) Login(req dto.LoginRequest) (*AuthResponse, error) {
 		return nil, err
 	}
 
-	token, _ := uc.generateToken(user.ID)
+	accessToken, err := uc.generateAccessToken(user.ID)
+	if err != nil {
+		return nil, err
+	}
+	refreshToken, err := uc.generateRefreshToken(user.ID)
+	if err != nil {
+		return nil, err
+	}
 
 	return &AuthResponse{
-		Token: token,
-		User:  *user,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		User:         *user,
 	}, nil
 }
 
-func (uc *AuthUseCase) generateToken(userID uuid.UUID) (string, error) {
-	claims := jwt.MapClaims{
-		"user_id": userID.String(),
-		"exp":     time.Now().Add(time.Hour * 24 * 7).Unix(),
+func (uc *AuthUseCase) RefreshToken(req dto.RefreshTokenRequest) (*AuthResponse, error) {
+
+	// Parse and validate the refresh token
+
+	token, err := jwt.Parse(req.RefreshToken, func(token *jwt.Token) (interface{}, error) {
+		return []byte(uc.jwtSecret), nil
+	})
+	if err != nil || !token.Valid {
+		return nil, errors.New("Invalid refresh token")
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, errors.New("invalid token claims")
+	}
 
+	// Check if it a refresh token
+	tokenType, ok := claims["typ"].(string)
+	if !ok || tokenType != "refresh" {
+		return nil, errors.New("invalid token type")
+	}
+
+	// Extract user ID
+	userIDStr, ok := claims["user_id"].(string)
+	if !ok {
+		return nil, errors.New("invalid user ID in token")
+	}
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return nil, errors.New("invalid user ID format")
+	}
+
+	// Get user from database
+	user, err := uc.userRepo.GetByID(userID)
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+
+	// Generate new tokens
+	accessToken, err := uc.generateAccessToken(user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	refreshToken, err := uc.generateRefreshToken(user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AuthResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		User:         *user,
+	}, nil
+
+}
+
+func (uc *AuthUseCase) generateAccessToken(userID uuid.UUID) (string, error) {
+	claims := jwt.MapClaims{
+		"user_id": userID.String(),
+		"exp":     time.Now().Add(time.Minute * 15).Unix(), // Access token: 15 phút
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(uc.jwtSecret))
+}
+
+func (uc *AuthUseCase) generateRefreshToken(userID uuid.UUID) (string, error) {
+	claims := jwt.MapClaims{
+		"user_id": userID.String(),
+		"exp":     time.Now().Add(time.Hour * 24 * 7).Unix(), // Refresh token: 7 ngày
+		"typ":     "refresh",
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(uc.jwtSecret))
 }
 
