@@ -13,6 +13,6 @@ type User struct {
 	Avatar    string    `json:"avatar"`
 	IsOnline  bool      `json:"is_online" gorm:"default:false"`
 	LastSeen  time.Time `json:"last_seen"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	CreatedAt time.Time `json:"-"`
+	UpdatedAt time.Time `json:"-"`
 }

@@ -29,7 +29,7 @@ func NewAuthUseCase(userRepo repositories.UserRepository, jwtSecret string) *Aut
 	}
 }
 
-func (uc *AuthUseCase) Register(req dto.RegisterRequest) (*AuthResponse, error) {
+func (uc *AuthUseCase) Register(req dto.RegisterRequest) (*dto.AuthResponse, error) {
 
 	//check if user exists
 	existingUser, _ := uc.userRepo.GetByEmail(req.Email)
@@ -72,14 +72,11 @@ func (uc *AuthUseCase) Register(req dto.RegisterRequest) (*AuthResponse, error) 
 		return nil, err
 	}
 
-	return &AuthResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		User:         *user,
-	}, nil
+	return dto.ToAuthResponse(user, accessToken, refreshToken), nil
+
 }
 
-func (uc *AuthUseCase) Login(req dto.LoginRequest) (*AuthResponse, error) {
+func (uc *AuthUseCase) Login(req dto.LoginRequest) (*dto.AuthResponse, error) {
 	user, err := uc.userRepo.GetByEmail(req.Email)
 	if err != nil {
 		return nil, errors.New("invalid credentials")
@@ -105,14 +102,10 @@ func (uc *AuthUseCase) Login(req dto.LoginRequest) (*AuthResponse, error) {
 		return nil, err
 	}
 
-	return &AuthResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		User:         *user,
-	}, nil
+	return dto.ToAuthResponse(user, accessToken, refreshToken), nil
 }
 
-func (uc *AuthUseCase) RefreshToken(req dto.RefreshTokenRequest) (*AuthResponse, error) {
+func (uc *AuthUseCase) RefreshToken(req dto.RefreshTokenRequest) (*dto.AuthResponse, error) {
 
 	// Parse and validate the refresh token
 
@@ -162,12 +155,7 @@ func (uc *AuthUseCase) RefreshToken(req dto.RefreshTokenRequest) (*AuthResponse,
 		return nil, err
 	}
 
-	return &AuthResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		User:         *user,
-	}, nil
-
+	return dto.ToAuthResponse(user, accessToken, refreshToken), nil
 }
 
 func (uc *AuthUseCase) generateAccessToken(userID uuid.UUID) (string, error) {
