@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"encoding/json"
 	"github.com/google/uuid"
 	"go-chat-app/internal/domain/entities"
 	"log"
