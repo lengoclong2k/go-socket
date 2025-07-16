@@ -6,7 +6,7 @@ import (
 	"go-chat-app/internal/interfaces/http/middlerware"
 )
 
-func SetupRoutes(router *gin.Engine, authHandler *handlers.AuthHandler, authMiddleware *middlerware.AuthMiddleware) {
+func SetupRoutes(router *gin.Engine, authHandler *handlers.AuthHandler, roomHandler *handlers.RoomHandler, authMiddleware *middlerware.AuthMiddleware) {
 
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
@@ -29,7 +29,10 @@ func SetupRoutes(router *gin.Engine, authHandler *handlers.AuthHandler, authMidd
 			//Room routes
 			rooms := protected.Group("/rooms")
 			{
-				rooms.POST("")
+				rooms.POST("", roomHandler.CreateRoom)          // POST /api/v1/rooms - Create room
+				rooms.GET("", roomHandler.GetUserRooms)         // GET /api/v1/rooms - Get user's rooms
+				rooms.POST("/:id/join", roomHandler.JoinRoom)   // POST /api/v1/rooms/:id/join - Join room
+				rooms.POST("/:id/leave", roomHandler.LeaveRoom) // POST /api/v1/rooms/:id/leave - Leave room
 			}
 		}
 	}
